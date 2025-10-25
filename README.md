@@ -244,21 +244,22 @@ The technical design document covers:
 - Source verification necessity
 
 ---
-
 ## 📂 Project Structure
-
 ```
 clinical-data-pipeline/
 ├── clinical_data_pipeline.py          # Main pipeline script
+├── clinical_data_db.sqlite            # Sample database output
+├── Clinical_Data_Quality_Dashboard.pbix  # Power BI dashboard file
 ├── requirements.txt                   # Python dependencies
 ├── README.md                          # This file
 ├── LICENSE                            # MIT License
-├── clinical_data_db.sqlite            # Output database (generated)
+├── .gitignore                         # Git ignore rules
 └── docs/
-    └── technical_design_document.md   # Production architecture guide
+    ├── technical_design_document.md   # Production architecture guide
+    └── images/
+        ├── powerbi_dashboard_queries.png   # Query management dashboard
+        └── powerbi_dashboard_sites.png     # Site performance dashboard
 ```
-
----
 
 ## 🔬 Sample Queries Generated
 
