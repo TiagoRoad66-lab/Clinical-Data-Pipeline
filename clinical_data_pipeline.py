@@ -97,7 +97,7 @@ def generate_synthetic_data(num_animals=50, num_visits_per_animal=5):
     print(f"⚠️  {len(positive_test_indices)} positive antigen tests (potential exclusion)")
     print(f"⚠️  {len(missing_test_indices)} missing antigen test results")
     
-    # 2. Demographics (DM)
+    # 2. Demographics (DM) - Build enrollment dates properly
     data_dm = {
         'AnimalID': animal_ids,
         'SiteID': [aid[:4] for aid in animal_ids],
@@ -106,9 +106,18 @@ def generate_synthetic_data(num_animals=50, num_visits_per_animal=5):
         'Sex': [df_sc[df_sc['AnimalID'] == aid]['Sex'].values[0] for aid in animal_ids],
         'BirthDate': [fake.date_of_birth(minimum_age=1, maximum_age=2).strftime('%Y-%m-%d') 
                       for _ in range(num_animals)],
-        'EnrollmentDate': [fake.date_between(start_date='-60d', end_date='today').strftime('%Y-%m-%d') 
-                           for _ in range(num_animals)]
+        'EnrollmentDate': []  # Will populate below to ensure proper date order
     }
+
+    # Create enrollment dates AFTER screening dates
+    enrollment_dates = []
+    for animal_id in animal_ids:
+        screening_date = pd.to_datetime(df_sc[df_sc['AnimalID'] == animal_id]['ScreeningDate'].values[0])
+        # Enrollment happens 1-7 days after screening
+        enrollment_date = screening_date + timedelta(days=random.randint(1, 7))
+        enrollment_dates.append(enrollment_date.strftime('%Y-%m-%d'))
+
+    data_dm['EnrollmentDate'] = enrollment_dates
     df_dm = pd.DataFrame(data_dm)
     
     # INTRODUCE DATA QUALITY ISSUES IN DEMOGRAPHICS
