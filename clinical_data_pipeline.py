@@ -97,18 +97,27 @@ def generate_synthetic_data(num_animals=50, num_visits_per_animal=5):
     print(f"⚠️  {len(positive_test_indices)} positive antigen tests (potential exclusion)")
     print(f"⚠️  {len(missing_test_indices)} missing antigen test results")
     
-    # 2. Demographics (DM)
+    # 2. Demographics (DM) - Build enrollment dates properly
     data_dm = {
         'AnimalID': animal_ids,
         'SiteID': [aid[:4] for aid in animal_ids],
         'Species': [df_sc[df_sc['AnimalID'] == aid]['Species'].values[0] for aid in animal_ids],
         'DoseGroup': random.choices(['Low', 'Mid', 'High', 'Control'], k=num_animals),
         'Sex': [df_sc[df_sc['AnimalID'] == aid]['Sex'].values[0] for aid in animal_ids],
-        'BirthDate': [fake.date_of_birth(minimum_age=0.5, maximum_age=2).strftime('%Y-%m-%d') 
+        'BirthDate': [fake.date_of_birth(minimum_age=1, maximum_age=2).strftime('%Y-%m-%d') 
                       for _ in range(num_animals)],
-        'EnrollmentDate': [fake.date_between(start_date='-60d', end_date='today').strftime('%Y-%m-%d') 
-                           for _ in range(num_animals)]
+        'EnrollmentDate': []  # Will populate below to ensure proper date order
     }
+
+    # Create enrollment dates AFTER screening dates
+    enrollment_dates = []
+    for animal_id in animal_ids:
+        screening_date = pd.to_datetime(df_sc[df_sc['AnimalID'] == animal_id]['ScreeningDate'].values[0])
+        # Enrollment happens 1-7 days after screening
+        enrollment_date = screening_date + timedelta(days=random.randint(1, 7))
+        enrollment_dates.append(enrollment_date.strftime('%Y-%m-%d'))
+
+    data_dm['EnrollmentDate'] = enrollment_dates
     df_dm = pd.DataFrame(data_dm)
     
     # INTRODUCE DATA QUALITY ISSUES IN DEMOGRAPHICS
@@ -539,20 +548,23 @@ def calculate_day_of_study(df_sc, df_dm, df_ex, df_vs, df_co):
     
     # Calculate screening period
     df_merged['DaysScreeningToFirstDose'] = (df_merged['FirstDoseDate'] - df_merged['EnrollmentDate']).dt.days
-    
-    # ADD DATA QUALITY FLAGS
+
+    # ADD DATA QUALITY FLAGS (only for records with actual issues)
     df_merged['DataQualityFlag'] = None
     df_merged['FlagReason'] = None
-    
+
+    # Flag 1: Missing critical data
     missing_data_mask = (df_merged['Sex'].isna()) | (df_merged['Weight_kg'].isna())
     df_merged.loc[missing_data_mask, 'DataQualityFlag'] = 'QUERY_REQUIRED'
     df_merged.loc[missing_data_mask, 'FlagReason'] = 'Missing critical data'
     
-    out_of_range_mask = (df_merged['Temperature_C'] < 36.0) | (df_merged['Temperature_C'] > 39.0)
+    # Flag 2: Out of range temperature (only if not already flagged)
+    out_of_range_mask = ((df_merged['Temperature_C'] < 36.0) | (df_merged['Temperature_C'] > 39.0)) & df_merged['DataQualityFlag'].isna()
     df_merged.loc[out_of_range_mask, 'DataQualityFlag'] = 'QUERY_REQUIRED'
     df_merged.loc[out_of_range_mask, 'FlagReason'] = 'Out of range temperature'
     
-    protocol_deviation_mask = df_merged['DaysScreeningToFirstDose'] < 0
+    # Flag 3: Protocol deviation (only if not already flagged AND actually negative)
+    protocol_deviation_mask = (df_merged['DaysScreeningToFirstDose'] < 0) & df_merged['DataQualityFlag'].isna()
     df_merged.loc[protocol_deviation_mask, 'DataQualityFlag'] = 'PROTOCOL_DEVIATION'
     df_merged.loc[protocol_deviation_mask, 'FlagReason'] = 'Dose before enrollment'
     
