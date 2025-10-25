@@ -167,6 +167,46 @@ Connect to `clinical_data_db.sqlite` with PowerBI/Tableau for:
 - Enrollment tracking
 
 ---
+## 📊 Power BI Dashboards
+
+The pipeline output connects to Power BI for interactive data quality monitoring and site performance analysis.
+
+### Query Management Dashboard
+
+![Query Management Dashboard](docs/images/powerbi_dashboard_queries.png)
+
+**Key Features:**
+- Real-time query tracking (382 total queries across all sites)
+- Query severity breakdown: Critical (23%), High (40%), Medium (38%)
+- Site-level query distribution with color-coded severity stacking
+- Detailed query listings with QueryID, type, and issue descriptions
+
+### Site Performance Dashboard
+
+![Site Performance Dashboard](docs/images/powerbi_dashboard_sites.png)
+
+**Key Metrics:**
+- **120 subjects** enrolled across **3 US sites**
+- **720 observations** collected
+- **57.8% data quality rate** (416 clean records, 304 flagged)
+- Site-specific quality comparison: US01 (62.77%), US02 (55.09%), US03 (54.05%)
+- Longitudinal weight trends by dose group over study days
+
+### Interactive Dashboard File
+
+An interactive Power BI dashboard is included: **`Clinical_Data_Quality_Dashboard.pbix`**
+
+**To explore:**
+1. Download [Power BI Desktop](https://powerbi.microsoft.com/desktop/) (free)
+2. Open the `.pbix` file from the repository
+3. Interact with filters, drill down into data, and explore the visuals
+
+**To recreate from scratch:**
+1. Run: `python clinical_data_pipeline.py`
+2. Convert SQLite to Excel (instructions in Technical Design Document)
+3. Load Excel into Power BI and create visuals
+
+---
 
 ## 🏗️ Architecture & Design
 
