@@ -104,7 +104,7 @@ def generate_synthetic_data(num_animals=50, num_visits_per_animal=5):
         'Species': [df_sc[df_sc['AnimalID'] == aid]['Species'].values[0] for aid in animal_ids],
         'DoseGroup': random.choices(['Low', 'Mid', 'High', 'Control'], k=num_animals),
         'Sex': [df_sc[df_sc['AnimalID'] == aid]['Sex'].values[0] for aid in animal_ids],
-        'BirthDate': [fake.date_of_birth(minimum_age=0.5, maximum_age=2).strftime('%Y-%m-%d') 
+        'BirthDate': [fake.date_of_birth(minimum_age=1, maximum_age=2).strftime('%Y-%m-%d') 
                       for _ in range(num_animals)],
         'EnrollmentDate': [fake.date_between(start_date='-60d', end_date='today').strftime('%Y-%m-%d') 
                            for _ in range(num_animals)]
