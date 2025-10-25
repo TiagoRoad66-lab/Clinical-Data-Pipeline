@@ -539,20 +539,23 @@ def calculate_day_of_study(df_sc, df_dm, df_ex, df_vs, df_co):
     
     # Calculate screening period
     df_merged['DaysScreeningToFirstDose'] = (df_merged['FirstDoseDate'] - df_merged['EnrollmentDate']).dt.days
-    
-    # ADD DATA QUALITY FLAGS
+
+    # ADD DATA QUALITY FLAGS (only for records with actual issues)
     df_merged['DataQualityFlag'] = None
     df_merged['FlagReason'] = None
-    
+
+    # Flag 1: Missing critical data
     missing_data_mask = (df_merged['Sex'].isna()) | (df_merged['Weight_kg'].isna())
     df_merged.loc[missing_data_mask, 'DataQualityFlag'] = 'QUERY_REQUIRED'
     df_merged.loc[missing_data_mask, 'FlagReason'] = 'Missing critical data'
     
-    out_of_range_mask = (df_merged['Temperature_C'] < 36.0) | (df_merged['Temperature_C'] > 39.0)
+    # Flag 2: Out of range temperature (only if not already flagged)
+    out_of_range_mask = ((df_merged['Temperature_C'] < 36.0) | (df_merged['Temperature_C'] > 39.0)) & df_merged['DataQualityFlag'].isna()
     df_merged.loc[out_of_range_mask, 'DataQualityFlag'] = 'QUERY_REQUIRED'
     df_merged.loc[out_of_range_mask, 'FlagReason'] = 'Out of range temperature'
     
-    protocol_deviation_mask = df_merged['DaysScreeningToFirstDose'] < 0
+    # Flag 3: Protocol deviation (only if not already flagged AND actually negative)
+    protocol_deviation_mask = (df_merged['DaysScreeningToFirstDose'] < 0) & df_merged['DataQualityFlag'].isna()
     df_merged.loc[protocol_deviation_mask, 'DataQualityFlag'] = 'PROTOCOL_DEVIATION'
     df_merged.loc[protocol_deviation_mask, 'FlagReason'] = 'Dose before enrollment'
     
